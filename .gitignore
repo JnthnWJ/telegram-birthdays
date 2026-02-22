@@ -4,3 +4,8 @@ __pycache__/
 config/birthdays.toml
 data/person_index.json
 data/reminder_state.json
+.env
+
+# macOS Finder metadata
+.DS_Store
+._*
