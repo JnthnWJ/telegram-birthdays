@@ -1,8 +1,16 @@
 from dataclasses import dataclass
+from datetime import date
 
 import pytest
 
-from birthday_bot.bot_handlers import is_authorized, parse_birthday_text, parse_offsets_text
+from birthday_bot.bot_handlers import (
+    BirthdayListRow,
+    _format_reminder_offsets,
+    _render_list_message,
+    is_authorized,
+    parse_birthday_text,
+    parse_offsets_text,
+)
 from birthday_bot.settings import Settings
 
 
@@ -37,6 +45,41 @@ def test_parse_offsets_skip_uses_default() -> None:
     offsets, used_default = parse_offsets_text("skip")
     assert offsets == [30, 7, 1, 0]
     assert used_default is True
+
+
+def test_format_reminder_offsets() -> None:
+    assert _format_reminder_offsets((30, 7, 1, 0)) == "30d, 7d, 1d, day-of"
+
+
+def test_render_list_message_structured_output() -> None:
+    message = _render_list_message(
+        [
+            BirthdayListRow(
+                name="Nik Hold",
+                days_until=81,
+                next_date=date(2026, 5, 14),
+                turning_age=None,
+                reminder_offsets=(7, 0),
+            ),
+            BirthdayListRow(
+                name="Dad",
+                days_until=181,
+                next_date=date(2026, 8, 22),
+                turning_age=67,
+                reminder_offsets=(30, 7, 1, 0),
+            ),
+        ]
+    )
+
+    assert message == (
+        "Tracked birthdays (2)\n"
+        "Sorted by soonest:\n"
+        "1. Nik Hold\n"
+        "   In 81d | Next 2026-05-14 | Reminders 7d, day-of\n"
+        "\n"
+        "2. Dad\n"
+        "   In 181d | Next 2026-08-22 | Turning 67 | Reminders 30d, 7d, 1d, day-of"
+    )
 
 
 @dataclass

@@ -33,6 +33,15 @@ class HandlerDependencies:
     settings: Settings
 
 
+@dataclass(frozen=True)
+class BirthdayListRow:
+    name: str
+    days_until: int
+    next_date: date
+    turning_age: int | None
+    reminder_offsets: tuple[int, ...]
+
+
 def is_authorized(update: Update, settings: Settings) -> bool:
     effective_user = update.effective_user
     effective_chat = update.effective_chat
@@ -105,6 +114,34 @@ def _render_help() -> str:
     )
 
 
+def _format_reminder_offsets(offsets: tuple[int, ...]) -> str:
+    labels: list[str] = []
+    for offset in offsets:
+        if offset == 0:
+            labels.append("day-of")
+        else:
+            labels.append(f"{offset}d")
+    return ", ".join(labels)
+
+
+def _render_list_message(rows: list[BirthdayListRow]) -> str:
+    lines = [f"Tracked birthdays ({len(rows)})", "Sorted by soonest:"]
+
+    for index, row in enumerate(rows, start=1):
+        lines.append(f"{index}. {row.name}")
+        details = [
+            f"In {row.days_until}d",
+            f"Next {row.next_date.isoformat()}",
+        ]
+        if row.turning_age is not None:
+            details.append(f"Turning {row.turning_age}")
+        details.append(f"Reminders {_format_reminder_offsets(row.reminder_offsets)}")
+        lines.append(f"   {' | '.join(details)}")
+        lines.append("")
+
+    return "\n".join(lines).rstrip()
+
+
 async def help_command(update: Update, context: CallbackContext) -> None:
     deps: HandlerDependencies = context.application.bot_data["handler_deps"]
     if not is_authorized(update, deps.settings):
@@ -128,21 +165,23 @@ async def list_command(update: Update, context: CallbackContext) -> None:
     person_ids = assign_and_persist_ids(settings.person_index_path, config.birthdays)
     now = datetime.now(ZoneInfo(config.timezone)).date()
 
-    rows: list[tuple[int, str]] = []
-    for entry, person_id in zip(config.birthdays, person_ids, strict=True):
+    rows: list[BirthdayListRow] = []
+    for entry, _person_id in zip(config.birthdays, person_ids, strict=True):
         days_until = days_until_birthday(entry, now, config.leap_day_rule)
         next_date = next_birthday(entry, now, config.leap_day_rule)
         age = turning_age(entry, next_date)
-        age_text = f", turning {age}" if age is not None else ""
-        offsets_text = ",".join(str(v) for v in entry.reminder_offsets)
-        line = (
-            f"- {entry.name}: {days_until} day(s)"
-            f" (next: {next_date.isoformat()}{age_text}; offsets: [{offsets_text}])"
+        rows.append(
+            BirthdayListRow(
+                name=entry.name,
+                days_until=days_until,
+                next_date=next_date,
+                turning_age=age,
+                reminder_offsets=tuple(entry.reminder_offsets),
+            )
         )
-        rows.append((days_until, line))
 
-    rows.sort(key=lambda item: (item[0], item[1].lower()))
-    message = "Tracked birthdays:\n" + "\n".join(line for _, line in rows)
+    rows.sort(key=lambda row: (row.days_until, row.name.lower()))
+    message = _render_list_message(rows)
     await update.effective_message.reply_text(message)
 
 
