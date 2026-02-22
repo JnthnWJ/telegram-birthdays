@@ -1,0 +1,16 @@
+[Unit]
+Description=Telegram Birthday Reminder Bot
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=ubuntu
+WorkingDirectory=/opt/telegram-birthdays
+EnvironmentFile=/opt/telegram-birthdays/.env
+ExecStart=/opt/telegram-birthdays/.venv/bin/python -m birthday_bot.main
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,6 @@
+__pycache__/
+*.pyc
+.venv/
+config/birthdays.toml
+data/person_index.json
+data/reminder_state.json

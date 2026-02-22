@@ -1,0 +1,18 @@
+timezone = "America/Los_Angeles"
+daily_send_time = "09:00"
+leap_day_rule = "feb28"
+
+# Reminder: if /add wizard offsets are left blank, default offsets are [30, 7, 1, 0].
+
+[[birthdays]]
+name = "Alice"
+month = 3
+day = 14
+year = 1990
+reminder_offsets = [30, 7, 1, 0]
+
+[[birthdays]]
+name = "Bob"
+month = 10
+day = 2
+reminder_offsets = [14, 3, 0]
