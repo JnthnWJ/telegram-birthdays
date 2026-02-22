@@ -185,3 +185,20 @@ def append_birthday(path: Path, new_birthday: BirthdayEntry) -> AppConfig:
     )
     save_config_atomic(path, updated)
     return updated
+
+
+def update_birthday(path: Path, index: int, updated_birthday: BirthdayEntry) -> AppConfig:
+    config = load_config(path)
+    if index < 0 or index >= len(config.birthdays):
+        raise IndexError("birthday index out of range")
+
+    birthdays = list(config.birthdays)
+    birthdays[index] = updated_birthday
+    updated = AppConfig(
+        timezone=config.timezone,
+        daily_send_time=config.daily_send_time,
+        leap_day_rule=config.leap_day_rule,
+        birthdays=birthdays,
+    )
+    save_config_atomic(path, updated)
+    return updated

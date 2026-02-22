@@ -5,12 +5,17 @@ import pytest
 
 from birthday_bot.bot_handlers import (
     BirthdayListRow,
+    _format_birthday,
     _format_reminder_offsets,
+    _render_edit_selection,
+    _render_help,
     _render_list_message,
+    _is_skip,
     is_authorized,
     parse_birthday_text,
     parse_offsets_text,
 )
+from birthday_bot.models import BirthdayEntry
 from birthday_bot.settings import Settings
 
 
@@ -49,6 +54,37 @@ def test_parse_offsets_skip_uses_default() -> None:
 
 def test_format_reminder_offsets() -> None:
     assert _format_reminder_offsets((30, 7, 1, 0)) == "30d, 7d, 1d, day-of"
+
+
+def test_format_birthday() -> None:
+    assert _format_birthday(3, 14, 1990) == "1990-03-14"
+    assert _format_birthday(3, 14, None) == "03-14"
+
+
+def test_is_skip() -> None:
+    assert _is_skip("skip")
+    assert _is_skip(" keep ")
+    assert _is_skip("same")
+    assert not _is_skip("default")
+
+
+def test_render_help_mentions_edit() -> None:
+    assert "/edit - Interactively edit an existing birthday" in _render_help()
+
+
+def test_render_edit_selection() -> None:
+    message = _render_edit_selection(
+        [
+            BirthdayEntry(name="Alice", month=3, day=14, year=1990, reminder_offsets=[30, 7, 1, 0]),
+            BirthdayEntry(name="Bob", month=8, day=22, year=None, reminder_offsets=[7, 0]),
+        ]
+    )
+    assert message == (
+        "Edit birthday wizard started.\n"
+        "Step 1/5: Reply with the number of the entry to edit:\n"
+        "1. Alice | 1990-03-14 | Reminders 30d, 7d, 1d, day-of\n"
+        "2. Bob | 08-22 | Reminders 7d, day-of"
+    )
 
 
 def test_render_list_message_structured_output() -> None:

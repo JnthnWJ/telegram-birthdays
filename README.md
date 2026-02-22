@@ -6,6 +6,7 @@ A Python Telegram bot that tracks birthdays in TOML, supports interactive adds v
 
 - Human-editable TOML config for bulk birthday management
 - `/add` wizard to add birthdays from Telegram chat
+- `/edit` wizard to update existing birthdays from Telegram chat
 - `/list` to show birthdays and days until each
 - `/help` for command reference
 - `/cancel` to abort wizard
@@ -66,6 +67,7 @@ python -m birthday_bot.main
 ## Commands
 
 - `/add` interactive wizard for creating birthday entries
+- `/edit` interactive wizard for updating existing entries
 - `/list` list tracked birthdays with days remaining
 - `/help` list commands and input formats
 - `/cancel` stop active wizard
