@@ -6,7 +6,7 @@ from pathlib import Path
 
 from birthday_bot.config_store import save_config_atomic
 from birthday_bot.models import AppConfig, BirthdayEntry
-from birthday_bot.reminder_service import ReminderService
+from birthday_bot.reminder_service import DueReminder, ReminderService
 
 
 @dataclass
@@ -99,3 +99,40 @@ def test_dispatch_next_day_allows_new_send(tmp_path: Path) -> None:
 
     assert count_day_two == 1
     assert len(fake_bot.sent_messages) == 2
+
+
+def test_format_reminder_message_is_deterministic_for_same_input() -> None:
+    reminder = DueReminder(
+        person_id="person-123",
+        person_name="Alice",
+        offset_days=0,
+        next_birthday_date=date(2026, 3, 14),
+        days_until=0,
+        turning_age=None,
+    )
+
+    first = ReminderService._format_reminder_message(reminder)
+    second = ReminderService._format_reminder_message(reminder)
+
+    assert first == second
+    assert "Alice" in first
+    assert "Date: 2026-03-14" in first
+    assert "turning" not in first
+
+
+def test_format_reminder_message_uses_age_templates_when_available() -> None:
+    reminder = DueReminder(
+        person_id="person-456",
+        person_name="Bob",
+        offset_days=4,
+        next_birthday_date=date(2026, 7, 20),
+        days_until=4,
+        turning_age=42,
+    )
+
+    message = ReminderService._format_reminder_message(reminder)
+
+    assert "Bob" in message
+    assert "42" in message
+    assert "Date: 2026-07-20" in message
+    assert "4 days" in message
